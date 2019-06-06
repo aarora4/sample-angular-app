@@ -1,6 +1,13 @@
 import { Response, Request } from "express";
 import { Router } from "express-serve-static-core";
-
+import * as vscode from "vscode";
+import { listen, MessageConnection } from 'vscode-ws-jsonrpc';
+import {
+  MonacoLanguageClient, CloseAction, ErrorAction,
+  MonacoServices, createConnection
+} from 'monaco-languageclient';
+import normalizeUrl = require('normalize-url');
+const ReconnectingWebSocket = require('reconnecting-websocket');
 
 
 /*
@@ -23,12 +30,15 @@ class HelloWorldDataservice{
   constructor(context: any){
     this.context = context;
     let router = express.Router();
+    // var app = express();
+    
     router.use(function noteRequest(req: Request,res: Response,next: any) {
       context.logger.info('Saw request, method='+req.method);
       next();
     });
     context.addBodyParseMiddleware(router);
     router.post('/',function(req: Request,res: Response) {
+      //console.log("HelloWorldDataService Constructed");
       let messageFromClient = req.body ? req.body.messageFromClient : "<No/Empty Message Received from Client>"
       let responseBody = {
         "_objectType": "org.zowe.zlux.sample.service.hello",
@@ -40,14 +50,64 @@ class HelloWorldDataservice{
         '${messageFromClient}'
         
         from client`
-      }        
+      }
+      
+      // process.on('uncaughtException', function (err: any) {
+      //   console.error('Uncaught Exception: ', err.toString());
+      //   if (err.stack) {
+      //       console.error(err.stack);
+      //   }
+      // });
+
+
       res.status(200).json(responseBody);
     });
     this.router = router;
+
+    // router.listen(3000)
+
   }
 
   getRouter():Router{
     return this.router;
+  }
+
+  createLanguageClient(connection: MessageConnection): MonacoLanguageClient {
+    return new MonacoLanguageClient({
+      name: "Sample Language Client",
+      clientOptions: {
+        // use a language id as a document selector
+        documentSelector: ['python'],
+        // disable the default error handler
+        errorHandler: {
+          error: () => ErrorAction.Continue,
+          closed: () => CloseAction.DoNotRestart
+        }
+      },
+      // create a language client connection from the JSON RPC connection on demand
+      connectionProvider: {
+        get: (errorHandler, closeHandler) => {
+          return Promise.resolve(createConnection(connection, errorHandler, closeHandler))
+        }
+      }
+    });
+  }
+  
+  createUrl(path: string): string {
+    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+    return normalizeUrl(`${protocol}://${location.host}${location.pathname}${path}`);
+  }
+  
+  createWebSocket(url: string): WebSocket {
+    const socketOptions = {
+      maxReconnectionDelay: 10000,
+      minReconnectionDelay: 1000,
+      reconnectionDelayGrowFactor: 1.3,
+      connectionTimeout: 10000,
+      maxRetries: Infinity,
+      debug: false
+    };
+    return new ReconnectingWebSocket(url, undefined, socketOptions);
   }
 }
 

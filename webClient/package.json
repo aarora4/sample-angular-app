@@ -8,7 +8,17 @@
     "lint": "tslint -c tslint.json \"./**/*.ts\""
   },
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "express": "^4.15.2",
+    "monaco-editor-core": "^0.14.6",
+    "monaco-languageclient": "file:..",
+    "normalize-url": "^2.0.1",
+    "reconnecting-websocket": "^3.2.2",
+    "request-light": "^0.2.2",
+    "vscode-json-languageservice": "^3.1.4",
+    "vscode-languageserver": "^4.0.0",
+    "vscode-ws-jsonrpc": "^0.0.2-1",
+    "ws": "^5.0.0"},
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.6.8",
     "@angular/animations": "~6.0.9",

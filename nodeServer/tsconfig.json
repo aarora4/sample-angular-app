@@ -10,6 +10,8 @@
     "types": [
       "node",
       "express"
-    ]
+    ],
+    "target": "es5",
+    "lib": ["es5", "es6", "dom"]
   }
 }
